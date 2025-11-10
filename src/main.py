@@ -6,6 +6,8 @@ from tkinter import ttk
 import mediapipe as mp
 import numpy as np
 
+is_compact = False  # state awal
+
 # ==========================
 # RESOLUSI
 # ==========================
@@ -45,6 +47,7 @@ class FaceApp(tk.Tk):
         self.was_sleepy = False  # Untuk mencegah multiple counting
         self.popup = None
         self.popup_close_time = None
+        self.is_compact = False
 
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -56,12 +59,13 @@ class FaceApp(tk.Tk):
 
         # Build UI
         self.build_ui()
+        
 
     # ==========================
     # UI BUILD
     # ==========================
     def build_ui(self):
-        ttk.Label(self, text="👁️ Drowsiness Monitor System", font=("Segoe UI", 16, "bold")).pack(pady=15)
+        ttk.Label(self, text="Drowsiness Monitor System", font=("Segoe UI", 16, "bold")).pack(pady=15)
 
         form = ttk.Frame(self)
         form.pack(pady=10)
@@ -109,12 +113,23 @@ class FaceApp(tk.Tk):
         ttk.Button(button_frame, text="▶ Mulai", command=self.start_thread).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="⏹ Stop", command=self.stop_detection).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="🔄 Reset Counter", command=self.reset_counter).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="⬇ Minimize", command=self.minimize_window).pack(side=tk.LEFT, padx=5)
 
         # Log Box
         self.log_box = tk.Text(self, height=8, width=50, bg="white")
         self.log_box.pack(pady=8)
         self.log("[INFO] Sistem siap digunakan.")
+
+                        # Simpan widget UI yang akan disembunyikan saat compact
+        self.compact_hide_widgets = [
+            form, 
+            timer_counter_frame,
+            button_frame,
+            self.log_box
+        ]
+
+        # Tombol toggle ukuran window
+        self.toggle_btn = tk.Button(self, text="↔", command=self.toggle_window_size, bg="#d9d9d9")
+        self.toggle_btn.place(x=440, y=5)
 
         self.update_timer()
 
@@ -170,18 +185,13 @@ class FaceApp(tk.Tk):
             self.running = True
             threading.Thread(target=self.detect_loop, daemon=True).start()
             self.log("[INFO] Deteksi dimulai...")
-            
-        # Auto minimize hanya jika mode user
-        if self.mode.get() == "User":
-            self.iconify()
+        if not self.is_compact and self.mode.get() == "User":
+            self.toggle_window_size()
 
     def stop_detection(self):
         self.running = False
         cv2.destroyAllWindows()
         self.log("[INFO] Deteksi dihentikan.")
-
-    def play_alarm(self):
-        print("[ALARM] Mata tertutup terlalu lama (suara dimatikan karena docker)")
 
     def show_popup(self):
         if self.popup is not None:
@@ -213,7 +223,7 @@ class FaceApp(tk.Tk):
         # Pesan tambahan santai
         tk.Label(
             self.popup,
-            text="Cobalah tarik napas, minum air, atau pejamkan mata sebentar.",
+            text="Cobalah tarik napas, minum air, Wudhu, atau pejamkan mata sebentar.",
             font=("Segoe UI", 12),
             fg="white",
             bg="#ff4f4f"
@@ -226,9 +236,32 @@ class FaceApp(tk.Tk):
         if self.popup is not None:
             self.popup.destroy()
             self.popup = None
-    
-    def minimize_window(self):
-        self.iconify()   # ini akan minimize window tanpa menghentikan program
+
+    def toggle_window_size(self):
+        global is_compact
+
+        if not is_compact:
+            # Masuk mode kecil
+            self.normal_geometry = self.geometry()
+            self.geometry("500x100")
+
+            # Sembunyikan semua UI kecuali status dan toggle
+            for w in self.compact_hide_widgets:
+                w.pack_forget()
+
+            self.toggle_btn.config(text="▣")  # ikon restore
+            is_compact = True
+        else:
+            # Kembali normal
+            self.geometry(self.normal_geometry)
+
+            # Tampilkan kembali UI
+            for w in self.compact_hide_widgets:
+                w.pack(pady=10)
+
+            self.toggle_btn.config(text="↔")
+            is_compact = False
+
 
     # ==========================
     # MAIN DETECTION LOOP
@@ -300,7 +333,6 @@ class FaceApp(tk.Tk):
                 # ===== STATUS LABEL =====
                 if sleepy:
                     self.status_label.config(text="⚠ MENGANTUK!", bg="red")
-                    self.play_alarm()
                 else:
                     self.status_label.config(text="Status: NORMAL", bg="green")
             else:
