@@ -15,8 +15,6 @@ Proyek ini bertujuan untuk mendeteksi **microsleep (kantuk singkat)** secara oto
 
 ## 🧠 Teknologi yang Digunakan
 - **Python** untuk pemrosesan data dan machine learning  
-- **OpenCV / Mediapipe** untuk deteksi wajah dan mata  
-- **TensorFlow / PyTorch** untuk model deteksi microsleep  
-- **Matplotlib / Pandas** untuk visualisasi dan analisis data
+- **OpenCV / Viola jones Har cascade** untuk deteksi wajah dan mata  
 
 ## ⚙️ Cara Menjalankan
