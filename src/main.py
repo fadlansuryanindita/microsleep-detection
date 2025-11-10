@@ -33,6 +33,7 @@ class FaceApp(tk.Tk):
         self.title("👁️ Micro Break & Drowsiness Detection")
         self.geometry("480x680")
         self.configure(bg="#f0f2f5")
+        self.popup_shown = False 
 
         self.running = False
         self.start_time = time.time()
@@ -42,6 +43,8 @@ class FaceApp(tk.Tk):
         self.last_face_detected_time = time.time()
         self.face_detected = False
         self.was_sleepy = False  # Untuk mencegah multiple counting
+        self.popup = None
+        self.popup_close_time = None
 
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -106,6 +109,7 @@ class FaceApp(tk.Tk):
         ttk.Button(button_frame, text="▶ Mulai", command=self.start_thread).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="⏹ Stop", command=self.stop_detection).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="🔄 Reset Counter", command=self.reset_counter).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="⬇ Minimize", command=self.minimize_window).pack(side=tk.LEFT, padx=5)
 
         # Log Box
         self.log_box = tk.Text(self, height=8, width=50, bg="white")
@@ -166,6 +170,10 @@ class FaceApp(tk.Tk):
             self.running = True
             threading.Thread(target=self.detect_loop, daemon=True).start()
             self.log("[INFO] Deteksi dimulai...")
+            
+        # Auto minimize hanya jika mode user
+        if self.mode.get() == "User":
+            self.iconify()
 
     def stop_detection(self):
         self.running = False
@@ -174,6 +182,53 @@ class FaceApp(tk.Tk):
 
     def play_alarm(self):
         print("[ALARM] Mata tertutup terlalu lama (suara dimatikan karena docker)")
+
+    def show_popup(self):
+        if self.popup is not None:
+            return  # Jangan buat popup baru kalau sudah ada
+
+        self.popup = tk.Toplevel(self)
+        self.popup.title("⚠ PERINGATAN KELELAHAN")
+        self.popup.geometry("720x220")  # << Perbesar ukuran popup
+        self.popup.configure(bg="#ff4f4f")  # Merah lembut biar warning nyaman
+
+        # Judul Besar
+        tk.Label(
+            self.popup,
+            text="⚠ Harap Beristirahat!",
+            font=("Segoe UI", 26, "bold"),   # << Font lebih besar
+            fg="white",
+            bg="#ff4f4f"
+        ).pack(pady=20)
+
+        # Info jumlah kantuk
+        tk.Label(
+            self.popup,
+            text=f"Kamu terdeteksi mengantuk sebanyak: {self.drowsy_count} kali",
+            font=("Segoe UI", 18),           # << Lebih jelas
+            fg="white",
+            bg="#ff4f4f"
+        ).pack(pady=5)
+
+        # Pesan tambahan santai
+        tk.Label(
+            self.popup,
+            text="Cobalah tarik napas, minum air, atau pejamkan mata sebentar.",
+            font=("Segoe UI", 12),
+            fg="white",
+            bg="#ff4f4f"
+        ).pack(pady=10)
+
+        # Disable close manual
+        self.popup.protocol("WM_DELETE_WINDOW", lambda: None)
+
+    def close_popup(self):
+        if self.popup is not None:
+            self.popup.destroy()
+            self.popup = None
+    
+    def minimize_window(self):
+        self.iconify()   # ini akan minimize window tanpa menghentikan program
 
     # ==========================
     # MAIN DETECTION LOOP
@@ -221,11 +276,26 @@ class FaceApp(tk.Tk):
 
                 # ===== DROWSINESS COUNTING =====
                 if sleepy and not self.was_sleepy:
-                    # New drowsiness event detected
                     self.update_counter()
                     self.was_sleepy = True
+
+                    # === Tampil POPUP (Mode User saja) ===
+                    if self.mode.get() == "User":
+                        self.show_popup()
+
                 elif not sleepy:
+                    # Mata sudah kembali terbuka
+                    if self.was_sleepy:
+                        # Set waktu kapan popup boleh ditutup
+                        if self.popup is not None and self.popup_close_time is None:
+                            self.popup_close_time = time.time() + 5  # Delay 5 detik
                     self.was_sleepy = False
+
+                # Tutup popup setelah 2 detik mata normal
+                if self.popup is not None and self.popup_close_time is not None:
+                    if time.time() >= self.popup_close_time:
+                        self.close_popup()
+                        self.popup_close_time = None
 
                 # ===== STATUS LABEL =====
                 if sleepy:
