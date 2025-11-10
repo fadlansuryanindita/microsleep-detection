@@ -1,4 +1,3 @@
-
 import cv2
 import time
 import threading
@@ -32,11 +31,17 @@ class FaceApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("👁️ Micro Break & Drowsiness Detection")
-        self.geometry("480x620")
+        self.geometry("480x680")
         self.configure(bg="#f0f2f5")
 
         self.running = False
         self.start_time = time.time()
+        
+        # Variabel baru untuk counting
+        self.drowsy_count = 0
+        self.last_face_detected_time = time.time()
+        self.face_detected = False
+        self.was_sleepy = False  # Untuk mencegah multiple counting
 
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -73,18 +78,34 @@ class FaceApp(tk.Tk):
         ttk.Label(form, text="Min Pejam (detik):").grid(row=3, column=0)
         self.sleep_time_set = tk.DoubleVar(value=1.2)
         ttk.Entry(form, textvariable=self.sleep_time_set, width=14).grid(row=3, column=1, padx=5, pady=4)
+        
+        # Tambahan: Waktu reset tanpa wajah
+        ttk.Label(form, text="Reset Timeout (detik):").grid(row=4, column=0)
+        self.reset_timeout = tk.DoubleVar(value=5.0)
+        ttk.Entry(form, textvariable=self.reset_timeout, width=14).grid(row=4, column=1, padx=5, pady=4)
 
         # Status Indicator
         self.status_label = tk.Label(self, text="Status: NORMAL", bg="green", fg="white", font=("Segoe UI", 16), width=20)
-        self.status_label.pack(pady=15)
+        self.status_label.pack(pady=10)
 
-        # Timer
-        self.timer_label = tk.Label(self, text="00:00:00", font=("Segoe UI", 24, "bold"), bg="#f0f2f5")
-        self.timer_label.pack(pady=10)
+        # Timer dan Counter
+        timer_counter_frame = tk.Frame(self, bg="#f0f2f5")
+        timer_counter_frame.pack(pady=10)
+        
+        self.timer_label = tk.Label(timer_counter_frame, text="00:00:00", font=("Segoe UI", 20, "bold"), bg="#f0f2f5")
+        self.timer_label.pack(side=tk.LEFT, padx=20)
+        
+        self.counter_label = tk.Label(timer_counter_frame, text="Kantuk: 0", font=("Segoe UI", 16, "bold"), 
+                                     bg="#ff6b6b", fg="white", width=12, height=2)
+        self.counter_label.pack(side=tk.LEFT, padx=20)
 
         # Buttons
-        ttk.Button(self, text="▶ Mulai", command=self.start_thread).pack(pady=5)
-        ttk.Button(self, text="⏹ Stop", command=self.stop_detection).pack(pady=5)
+        button_frame = tk.Frame(self, bg="#f0f2f5")
+        button_frame.pack(pady=10)
+        
+        ttk.Button(button_frame, text="▶ Mulai", command=self.start_thread).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="⏹ Stop", command=self.stop_detection).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="🔄 Reset Counter", command=self.reset_counter).pack(side=tk.LEFT, padx=5)
 
         # Log Box
         self.log_box = tk.Text(self, height=8, width=50, bg="white")
@@ -113,6 +134,30 @@ class FaceApp(tk.Tk):
         self.after(1000, self.update_timer)
 
     # ==========================
+    # COUNTER MANAGEMENT
+    # ==========================
+    def reset_counter(self):
+        self.drowsy_count = 0
+        self.counter_label.config(text="Kantuk: 0")
+        self.log("[INFO] Counter direset ke 0")
+
+    def update_counter(self):
+        self.drowsy_count += 1
+        self.counter_label.config(text=f"Kantuk: {self.drowsy_count}")
+        self.log(f"[COUNT] Kantuk terdeteksi! Total: {self.drowsy_count}")
+
+    def check_face_timeout(self):
+        """Reset counter jika wajah tidak terdeteksi dalam waktu tertentu"""
+        if self.face_detected:
+            self.last_face_detected_time = time.time()
+            self.face_detected = False
+        else:
+            time_since_last_face = time.time() - self.last_face_detected_time
+            if time_since_last_face > self.reset_timeout.get() and self.drowsy_count > 0:
+                self.log(f"[RESET] Counter direset karena tidak ada wajah terdeteksi selama {self.reset_timeout.get()} detik")
+                self.reset_counter()
+
+    # ==========================
     # START / STOP
     # ==========================
     def start_thread(self):
@@ -130,7 +175,6 @@ class FaceApp(tk.Tk):
     def play_alarm(self):
         print("[ALARM] Mata tertutup terlalu lama (suara dimatikan karena docker)")
 
-
     # ==========================
     # MAIN DETECTION LOOP
     # ==========================
@@ -141,6 +185,7 @@ class FaceApp(tk.Tk):
         cap.set(4, height)
 
         closed_counter = 0
+        self.face_detected = False
 
         while self.running:
             ret, frame = cap.read()
@@ -151,7 +196,11 @@ class FaceApp(tk.Tk):
             results = self.face_mesh.process(rgb)
 
             ear = 1.0
+            face_found = False
+            
             if results.multi_face_landmarks:
+                face_found = True
+                self.face_detected = True
                 lm = results.multi_face_landmarks[0].landmark
                 left_idx = [33, 160, 158, 133, 153, 144]
                 right_idx = [263, 387, 385, 362, 380, 373]
@@ -159,23 +208,40 @@ class FaceApp(tk.Tk):
                 right_eye = np.array([(lm[i].x, lm[i].y) for i in right_idx])
                 ear = (calculate_EAR(left_eye) + calculate_EAR(right_eye)) / 2.0
 
-            if ear < self.ear_threshold.get():
-                closed_counter += 1
+            # Check for face timeout
+            self.check_face_timeout()
+
+            if face_found:
+                if ear < self.ear_threshold.get():
+                    closed_counter += 1
+                else:
+                    closed_counter = 0
+
+                sleepy = closed_counter * 0.033 > self.sleep_time_set.get()
+
+                # ===== DROWSINESS COUNTING =====
+                if sleepy and not self.was_sleepy:
+                    # New drowsiness event detected
+                    self.update_counter()
+                    self.was_sleepy = True
+                elif not sleepy:
+                    self.was_sleepy = False
+
+                # ===== STATUS LABEL =====
+                if sleepy:
+                    self.status_label.config(text="⚠ MENGANTUK!", bg="red")
+                    self.play_alarm()
+                else:
+                    self.status_label.config(text="Status: NORMAL", bg="green")
             else:
+                # No face detected
                 closed_counter = 0
-
-            sleepy = closed_counter * 0.033 > self.sleep_time_set.get()
-
-            # ===== STATUS LABEL =====
-            if sleepy:
-                self.status_label.config(text="⚠ MENGANTUK!", bg="red")
-                self.play_alarm()
-            else:
-                self.status_label.config(text="Status: NORMAL", bg="green")
+                self.status_label.config(text="WAJAH TIDAK TERDETEKSI", bg="orange")
+                self.was_sleepy = False
 
             # ===== MODE ENGINEER =====
             if self.mode.get() == "Engineer":
-                if results.multi_face_landmarks:
+                if face_found:
                     # draw mesh
                     self.mp_drawing.draw_landmarks(
                         frame,
@@ -186,7 +252,7 @@ class FaceApp(tk.Tk):
                     )
 
                     # draw eye bounding boxes safely
-                    if left_eye.size > 0 and right_eye.size > 0:
+                    if 'left_eye' in locals() and 'right_eye' in locals() and left_eye.size > 0 and right_eye.size > 0:
                         lx, ly, lw, lh = cv2.boundingRect((left_eye * [width, height]).astype(np.int32))
                         rx, ry, rw, rh = cv2.boundingRect((right_eye * [width, height]).astype(np.int32))
 
@@ -195,6 +261,10 @@ class FaceApp(tk.Tk):
 
                     if sleepy:
                         cv2.putText(frame, "⚠ DROWSY!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 0, 255), 3)
+                
+                # Display counter on engineer mode
+                cv2.putText(frame, f"Drowsy Count: {self.drowsy_count}", (50, height - 30), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
                 cv2.imshow("Drowsiness Monitor", frame)
 
