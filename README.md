@@ -8,10 +8,10 @@ Proyek ini bertujuan untuk mendeteksi **microsleep (kantuk singkat)** secara oto
 >- Politeknik Elektronika Negeri Surabaya<br> 
 
 ## Teamwork
-1. Nur Rohmat Hidayat (2122600012)
-2. Fadlan Surya Anindita (2122600024)
-3. Dwi Angga Ramadhani (2122600053)
-4. Asyraf Sulthan Zaky (2122600060)
+> 1. Nur Rohmat Hidayat (2122600012)
+> 2. Fadlan Surya Anindita (2122600024)
+> 3. Dwi Angga Ramadhani (2122600053)
+> 4. Asyraf Sulthan Zaky (2122600060)
 
 ## 🚀 Fitur Utama
 - Deteksi tanda-tanda kantuk berdasarkan citra wajah atau sinyal fisiologis.  
