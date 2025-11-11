@@ -1,6 +1,12 @@
 # Microsleep Detection 😴
 
 Proyek ini bertujuan untuk mendeteksi **microsleep (kantuk singkat)** secara otomatis menggunakan data dari sensor atau kamera. Sistem ini dapat membantu meningkatkan keselamatan pengemudi dengan memberikan peringatan dini saat tanda-tanda kantuk terdeteksi.
+## Support By :
+>- Dosen Pengampu : Akhmad Hendriawan ST., MT. (NIP.197501272002121003)
+>- Mata kuliah : Pengolahan Citra
+>- Program Studi : D4 Teknik Elektronika
+>- Politeknik Elektronika Negeri Surabaya<br> 
+
 ## Teamwork
 1. Nur Rohmat Hidayat (2122600012)
 2. Fadlan Surya Anindita (2122600024)
@@ -49,3 +55,26 @@ Proyek ini bertujuan untuk mendeteksi **microsleep (kantuk singkat)** secara oto
 </div>
 
 ## 📷 Output Metode Mediapipe
+**Mode User 👁️🙂**<br>
+
+<div align="center">
+<img src="Assets/Mediapipe3.png"><br>
+</div>
+
+**Mode User 👁️😴**<br>
+
+<div align="center">
+<img src="Assets/Mediapipe4.png" width = 900><br>
+</div>
+
+**Mode Engineer 👁️🙂**<br>
+
+<div align="center">
+<img src="Assets/Mediapipe1.png" width = 900><br>
+</div>
+
+**Mode Engineer 👁️😴**<br>
+
+<div align="center">
+<img src="Assets/Mediapipe2.png" width = 900><br>
+</div>
