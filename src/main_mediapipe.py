@@ -5,8 +5,10 @@ import tkinter as tk
 from tkinter import ttk
 import mediapipe as mp
 import numpy as np
+import winsound
 
 is_compact = False  # state awal
+Alarm_sound = False
 
 # ==========================
 # RESOLUSI
@@ -48,6 +50,7 @@ class FaceApp(tk.Tk):
         self.popup = None
         self.popup_close_time = None
         self.is_compact = False
+        self.alarm_thread = None # untuk menyimpan Thread Alarm aktif
 
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_face_mesh = mp.solutions.face_mesh
@@ -261,6 +264,29 @@ class FaceApp(tk.Tk):
 
             self.toggle_btn.config(text="↔")
             is_compact = False
+    
+    def Alarm(self):
+        global Alarm_sound
+        while Alarm_sound:
+            winsound.Beep(1000, 200)
+            # Cek lebih sering agar cepat berhenti saat dimatikan
+            for _ in range(10):
+                if not Alarm_sound:
+                    break
+                time.sleep(0.02)
+        
+    def start_alarm(self):
+        global Alarm_sound
+        if not Alarm_sound:
+            Alarm_sound = True
+            if self.alarm_thread is None or not self.alarm_thread.is_alive():
+                self.alarm_thread = threading.Thread(target=self.Alarm, daemon=True)
+                self.alarm_thread.start()
+
+    def stop_alarm(self):
+        global Alarm_sound
+        Alarm_sound = False
+        # Tunggu sebentar biar thread sempat berhenti
 
 
     # ==========================
@@ -272,12 +298,18 @@ class FaceApp(tk.Tk):
         cap.set(3, width)
         cap.set(4, height)
 
-        closed_counter = 0
+        closed_time = 0.0
+        last_frame_time = time.time()
         self.face_detected = False
 
         while self.running:
+            now = time.time()
+            dt = now - last_frame_time
+            last_frame_time = now
+
             ret, frame = cap.read()
             if not ret:
+                time.sleep(0.01)
                 continue
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -294,18 +326,23 @@ class FaceApp(tk.Tk):
                 right_idx = [263, 387, 385, 362, 380, 373]
                 left_eye = np.array([(lm[i].x, lm[i].y) for i in left_idx])
                 right_eye = np.array([(lm[i].x, lm[i].y) for i in right_idx])
-                ear = (calculate_EAR(left_eye) + calculate_EAR(right_eye)) / 2.0
+                try:
+                   ear = (calculate_EAR(left_eye) + calculate_EAR(right_eye)) / 2.0
+                except Exception as e:
+                    # jika perhitungan gagal, skip frame ini
+                    self.log(f"[WARN] EAR calculation error: {e}")
+                    face_found = False   
 
             # Check for face timeout
             self.check_face_timeout()
 
             if face_found:
                 if ear < self.ear_threshold.get():
-                    closed_counter += 1
+                    closed_time += dt
                 else:
-                    closed_counter = 0
+                    closed_time = 0
 
-                sleepy = closed_counter * 0.033 > self.sleep_time_set.get()
+                sleepy = closed_time > self.sleep_time_set.get()
 
                 # ===== DROWSINESS COUNTING =====
                 if sleepy and not self.was_sleepy:
@@ -330,6 +367,11 @@ class FaceApp(tk.Tk):
                         self.close_popup()
                         self.popup_close_time = None
 
+                if self.popup is not None or sleepy:
+                    self.start_alarm()
+                else:
+                    self.stop_alarm()
+
                 # ===== STATUS LABEL =====
                 if sleepy:
                     self.status_label.config(text="⚠ MENGANTUK!", bg="red")
@@ -337,9 +379,10 @@ class FaceApp(tk.Tk):
                     self.status_label.config(text="Status: NORMAL", bg="green")
             else:
                 # No face detected
-                closed_counter = 0
+                closed_time = 0.0
                 self.status_label.config(text="WAJAH TIDAK TERDETEKSI", bg="orange")
                 self.was_sleepy = False
+                self.stop_alarm()
 
             # ===== MODE ENGINEER =====
             if self.mode.get() == "Engineer":
