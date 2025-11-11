@@ -10,15 +10,15 @@ cam = cv2.VideoCapture(0)
 
 no_eye_start = None
 last_beep_time = 0
-alarm_delay = 3  # mata tertutup 3 detik baru bunyi alarm
-beep_interval = 1  # jeda antar beep 1 detik
+alarm_delay = 3  # mata tertutup nya brp dtk
+beep_interval = 1  # jeda antar beep nya brp dtk
 
 while True:
     ret, frame = cam.read()
     if not ret:
         break
 
-    # perkecil ukuran frame biar lebih ringan
+    # size frame
     frame = cv2.resize(frame, (360, 240))
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -42,9 +42,9 @@ while True:
         if no_eye_start is None:
             no_eye_start = current_time
         elif current_time - no_eye_start > alarm_delay:
-            # beep hanya kalau sudah lewat 1 detik dari beep terakhir
+            # beep hanya kalau sudah lewat 1 dtk dari beep terakhir
             if current_time - last_beep_time >= beep_interval:
-                winsound.Beep(1000, 700)  # frekuensi 1000Hz, durasi 0.7 detik
+                winsound.Beep(1000, 700)  # frekuensi 1000Hz, durasi 0.7 dtk
                 last_beep_time = current_time
                 print("⚠️ KAMU NGANTUK BRO")
     else:
@@ -58,3 +58,4 @@ while True:
 
 cam.release()
 cv2.destroyAllWindows()
+
