@@ -75,7 +75,7 @@ class FaceApp(tk.Tk):
 
         ttk.Label(form, text="Mode Tampilan:").grid(row=0, column=0)
         self.mode = tk.StringVar(value="User")
-        ttk.Combobox(form, textvariable=self.mode, values=["User", "Engineer"], width=14).grid(row=0, column=1, padx=5, pady=4)
+        ttk.Combobox(form, textvariable=self.mode, values=["User", "Developer"], width=14).grid(row=0, column=1, padx=5, pady=4)
 
         ttk.Label(form, text="Resolusi Kamera:").grid(row=1, column=0)
         self.res_var = tk.StringVar(value="480p")
@@ -278,10 +278,27 @@ class FaceApp(tk.Tk):
         closed_counter = 0
         self.face_detected = False
 
+                # === Tambahan untuk FPS ===
+        prev_time = time.time()
+        fps = 0
+        fps_update_time = time.time()
+
         while self.running:
             ret, frame = cap.read()
             if not ret:
                 continue
+
+            # === Hitung FPS ===
+            current_time = time.time()
+            dt = current_time - prev_time
+            if dt > 0:
+                fps = 1.0 / dt
+            prev_time = current_time
+
+            # Update log FPS setiap 1 detik
+            if current_time - fps_update_time >= 1.0:
+                self.log(f"[FPS] {fps:.2f}")
+                fps_update_time = current_time
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -314,8 +331,8 @@ class FaceApp(tk.Tk):
                         dark_ratio = np.sum(thresh == 255) / (thresh.shape[0] * thresh.shape[1])
                         eye_dark_ratios.append(dark_ratio)
 
-                        # Engineer Mode Visual Debug
-                        if self.mode.get() == "Engineer":
+                        # Developer Mode Visual Debug
+                        if self.mode.get() == "Developer":
                             cv2.rectangle(face_color, (ex, ey), (ex+ew, ey+eh),
                                         (255, 255, 66) if dark_ratio < 0.08 else (255, 255, 66), 2)
                             cv2.putText(frame, f"{dark_ratio:.3f}", (x+ex, y+ey-5),
@@ -366,8 +383,10 @@ class FaceApp(tk.Tk):
                 self.status_label.config(text="WAJAH TIDAK TERDETEKSI", bg="orange")
                 self.was_sleepy = False
 
-            # Engineer Mode menampilkan kamera
-            if self.mode.get() == "Engineer":
+            # Developer Mode menampilkan kamera
+            if self.mode.get() == "Developer":
+                cv2.putText(frame, f"FPS: {fps:.2f}", (10, 25),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2)
                 cv2.putText(frame, f"Drowsy Count: {self.drowsy_count}", (50, height - 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
                 cv2.imshow("Drowsiness Monitor", frame)

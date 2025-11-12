@@ -79,6 +79,20 @@ Proyek ini bertujuan untuk mendeteksi **microsleep (kantuk singkat)** secara oto
 <img src="Assets/Mediapipe2.png" width = 900><br>
 </div>
 
+## 📈 Perbandingan Komputasi CPU 
+
+**Metode Viola jones Har cascade**<br>
+
+<div align="center">
+<img src="Assets/Komputasi.png" width = 900><br>
+</div>
+
+**Mode Mediapipe**<br>
+
+<div align="center">
+<img src="Assets/Komputasi1.png" width = 900><br>
+</div>
+
 ## Kesimpulan Praktikum Microsleep Detection
 
 ### Perbandingan Metode Deteksi Kantuk
@@ -127,6 +141,43 @@ Metode ini menggunakan **EAR (Eye Aspect Ratio)** yang menghitung rasio geometri
 
 ---
 
+## 4. Analisis Performa Berdasarkan Hasil Eksperimen
+
+Berdasarkan hasil pengujian pada dua metode deteksi mata menggunakan **Viola-Jones Haar Cascade** dan **MediaPipe Face Mesh**, diperoleh perbandingan performa sebagai berikut:
+
+### 📊 Gambar 1 – Viola-Jones Haar Cascade
+- **FPS:** ~16.86  
+- **CPU Usage:** 25–30%  
+- **Metode:** Deteksi berbasis *Dark Ratio* menggunakan persegi deteksi mata  
+- **Kelebihan:**  
+  - Proses cepat dan ringan  
+  - Implementasi sederhana  
+- **Kekurangan:**  
+  - Sensitif terhadap pencahayaan dan pantulan  
+  - Deteksi mata kurang stabil saat mata tertutup sebagian  
+
+### 📈 Gambar 2 – MediaPipe Face Mesh
+- **FPS:** ~11.92  
+- **CPU Usage:** ~20–25% (terdistribusi ke beberapa core)  
+- **Metode:** Deteksi berbasis 468 titik *facial landmark*  
+- **Kelebihan:**  
+  - Deteksi wajah dan mata sangat presisi  
+  - Stabil terhadap perubahan pencahayaan  
+- **Kekurangan:**  
+  - FPS sedikit lebih rendah  
+  - Memerlukan komputasi lebih tinggi  
+
+---
+
+## 5. Hasil Pengamatan FPS dan Performa
+
+| Metode | FPS Rata-rata | CPU Usage | Akurasi Deteksi | Ketahanan Pencahayaan |
+|---------|----------------|------------|-----------------|-----------------------|
+| Haar Cascade | ~16.8 FPS | 25–30% | Sedang | Rendah |
+| MediaPipe Face Mesh | ~11.9 FPS | 20–25% | Tinggi | Tinggi |
+
+---
+
 ### Rekomendasi
 
 Untuk aplikasi **microsleep detection pada pengemudi**, **MediaPipe** lebih direkomendasikan karena:
@@ -138,9 +189,13 @@ Namun, **Viola-Jones Haar Cascade** tetap dapat menjadi pilihan untuk sistem den
 
 ---
 
-### Kesimpulan Akhir
+## 6. Kesimpulan Akhir
 
-MediaPipe dengan parameter EAR memberikan performa lebih baik dan stabil dibanding Viola-Jones Haar Cascade dengan Dark Ratio, terutama pada kondisi pencahayaan dinamis yang merupakan tantangan utama dalam implementasi sistem deteksi microsleep real-time.
+1. **Haar Cascade** lebih efisien secara komputasi dan cocok untuk sistem dengan keterbatasan hardware, namun akurasi menurun pada kondisi pencahayaan tidak stabil.  
+2. **MediaPipe Face Mesh** memiliki akurasi dan stabilitas yang jauh lebih tinggi dalam mendeteksi kondisi mata, meskipun dengan FPS sedikit lebih rendah.  
+3. Trade-off utama antara kedua metode ini adalah **kecepatan vs akurasi** — di mana MediaPipe lebih unggul untuk sistem deteksi kantuk yang membutuhkan keandalan tinggi.  
+
 ---
+
 ### VIDEO PENGGUNAAN
 https://youtu.be/WKb0zVvA7Mk
