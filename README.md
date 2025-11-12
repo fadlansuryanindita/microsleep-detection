@@ -101,7 +101,7 @@ Praktikum ini membandingkan dua metode deteksi microsleep pada mata manusia: **V
 
 ---
 
-### 1. Viola-Jones Haar Cascade
+## 1. Viola-Jones Haar Cascade
 
 Metode ini menggunakan **Dark Ratio** sebagai parameter utama untuk mendeteksi kantuk. Dark Ratio mengukur perbandingan area gelap (mata tertutup) terhadap total area deteksi mata.
 
@@ -117,7 +117,7 @@ Metode ini menggunakan **Dark Ratio** sebagai parameter utama untuk mendeteksi k
 
 ---
 
-### 2. MediaPipe Face Mesh
+## 2. MediaPipe Face Mesh
 
 Metode ini menggunakan **EAR (Eye Aspect Ratio)** yang menghitung rasio geometris antara jarak vertikal dan horizontal landmark mata.
 
@@ -133,7 +133,7 @@ Metode ini menggunakan **EAR (Eye Aspect Ratio)** yang menghitung rasio geometri
 
 ---
 
-### 3. Kesamaan Kedua Metode
+## 3. Kesamaan Kedua Metode
 
 - Keduanya menggunakan **threshold** sebagai batas klasifikasi antara mata terbuka dan tertutup
 - Memerlukan **tuning parameter** untuk mengoptimalkan performa
@@ -141,7 +141,7 @@ Metode ini menggunakan **EAR (Eye Aspect Ratio)** yang menghitung rasio geometri
 
 ---
 
-## 4. Analisis Performa Berdasarkan Hasil Eksperimen
+## 4. Analisis Performa
 
 Berdasarkan hasil pengujian pada dua metode deteksi mata menggunakan **Viola-Jones Haar Cascade** dan **MediaPipe Face Mesh**, diperoleh perbandingan performa sebagai berikut:
 
