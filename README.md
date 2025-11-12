@@ -141,3 +141,6 @@ Namun, **Viola-Jones Haar Cascade** tetap dapat menjadi pilihan untuk sistem den
 ### Kesimpulan Akhir
 
 MediaPipe dengan parameter EAR memberikan performa lebih baik dan stabil dibanding Viola-Jones Haar Cascade dengan Dark Ratio, terutama pada kondisi pencahayaan dinamis yang merupakan tantangan utama dalam implementasi sistem deteksi microsleep real-time.
+
+### VIDEO PENGGUNAAN
+https://youtu.be/WKb0zVvA7Mk
