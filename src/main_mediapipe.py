@@ -297,7 +297,7 @@ class FaceApp(tk.Tk):
         cap = cv2.VideoCapture(0)
         cap.set(3, width)
         cap.set(4, height)
-
+        closed_counter = 0
         closed_time = 0.0
         last_frame_time = time.time()
         self.face_detected = False
